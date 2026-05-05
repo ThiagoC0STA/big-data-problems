@@ -1,0 +1,27 @@
+# Local Postgres for Granary backend.
+# Start: docker compose up -d
+# Stop:  docker compose down
+# Reset: docker compose down -v   (deletes the volume too)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: granary-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: granary
+      POSTGRES_PASSWORD: granary
+      POSTGRES_DB: granary
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - granary-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U granary -d granary"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  granary-pg-data:

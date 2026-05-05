@@ -1,0 +1,39 @@
+# Fly.io config for granary-api.
+# First deploy:
+#   flyctl launch --no-deploy --name granary-api --region gru
+#   flyctl secrets set DATABASE_URL="postgresql+asyncpg://..." \
+#                      ANTHROPIC_API_KEY="sk-ant-..." \
+#                      CORS_ORIGINS="https://granary.vercel.app"
+#   flyctl deploy
+# Subsequent: flyctl deploy
+
+app = "granary-api"
+primary_region = "gru"
+
+[build]
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Keep one machine always on so the recruiter doesn't see a cold start.
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "15s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[env]
+  PORT = "8000"
+  LOG_LEVEL = "INFO"
+  # CATALOG_SIZE can stay default (100K). Crank it up via secrets if you want.
