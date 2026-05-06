@@ -5,20 +5,23 @@ import {
   CheckCheck,
   Database,
   Home,
+  Menu,
   Sparkles,
   Wifi,
   WifiOff,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { NetworkOffline } from "@/components/fallbacks";
 import { PerformanceHud } from "@/components/performance-hud";
 import { useOnlineStatus } from "@/components/resilience";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -46,53 +49,62 @@ const NAV: NavItem[] = [
   { href: "/lab", label: "Lab", icon: <Beaker className="h-4 w-4" />, hint: "resilience" },
 ];
 
+function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
+    <nav className="flex flex-col gap-0.5 p-2">
+      {NAV.map((item) => {
+        const active =
+          item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+              active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "transition-colors",
+                active
+                  ? "text-primary"
+                  : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground",
+              )}
+            >
+              {item.icon}
+            </span>
+            <span className="flex-1">{item.label}</span>
+            {item.hint ? (
+              <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40">
+                {item.hint}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const online = useOnlineStatus();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex min-h-dvh">
+      {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-border/60 bg-sidebar text-sidebar-foreground md:flex">
         <BrandMark />
         <Separator className="bg-sidebar-border" />
         <ScrollArea className="flex-1">
-          <nav className="flex flex-col gap-0.5 p-2">
-            {NAV.map((item) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "transition-colors",
-                      active
-                        ? "text-primary"
-                        : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground",
-                    )}
-                  >
-                    {item.icon}
-                  </span>
-                  <span className="flex-1">{item.label}</span>
-                  {item.hint ? (
-                    <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40">
-                      {item.hint}
-                    </span>
-                  ) : null}
-                </Link>
-              );
-            })}
-          </nav>
+          <NavLinks pathname={pathname} />
         </ScrollArea>
         <Separator className="bg-sidebar-border" />
         <div className="flex items-center justify-between p-3 text-xs text-sidebar-foreground/60">
@@ -112,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {!online ? <NetworkOffline /> : null}
-        <Topbar />
+        <Topbar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} pathname={pathname} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
       <PerformanceHud />
@@ -134,9 +146,32 @@ function BrandMark() {
   );
 }
 
-function Topbar() {
+function Topbar({
+  mobileOpen,
+  setMobileOpen,
+  pathname,
+}: {
+  mobileOpen: boolean;
+  setMobileOpen: (v: boolean) => void;
+  pathname: string;
+}) {
   return (
     <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
+      {/* Mobile hamburger */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground">
+          <BrandMark />
+          <Separator className="bg-sidebar-border" />
+          <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
       <span className="text-xs text-muted-foreground">
         Validate, enrich, and edit massive product catalogs at speed.
       </span>

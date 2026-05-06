@@ -219,9 +219,91 @@ def generate_products(
     return products
 
 
-def stream_products(*, count: int, seed: int, defect_rate: float) -> Iterator[Product]:
-    """Streaming variant for large catalogs."""
-    yield from generate_products(count=count, seed=seed, defect_rate=defect_rate)
+def stream_products(
+    *,
+    count: int,
+    seed: int,
+    defect_rate: float,
+    base_time: datetime | None = None,
+) -> Iterator[Product]:
+    """True generator — yields one product at a time, O(1) memory per item.
+
+    seen_skus lives in generator scope so duplicate-SKU injection still works
+    across the full run (~10 MB for 1 M entries, acceptable).
+    """
+    rng = Mulberry32(seed)
+    base_time = base_time or datetime.now(UTC)
+    seen_skus: dict[str, str] = {}
+
+    for _i in range(count):
+        category = rng.choice(CATEGORIES)
+        subcategory = rng.choice(CATEGORIES_TREE[category])
+        brand = rng.choice(BRANDS)
+        adj = rng.choice(ADJECTIVES)
+        noun = rng.choice(NOUNS_BY_CATEGORY[category])
+        unit = rng.choice(UNITS)
+        name = f"{brand} {adj} {noun} - {unit}"
+
+        sku = _sku(rng)
+        if rng.chance(0.005) and seen_skus:
+            sku = next(iter(seen_skus.keys()))
+        seen_skus[sku] = ""
+
+        price_cents = max(99, int(rng.random() * 4900) + 99)
+        inventory = rng.randint(0, 800)
+        weight_g: int | None = int(50 + rng.random() * 4000)
+
+        description: str | None = (
+            f"{adj.lower()} {noun.lower()} from {brand}. {unit}. "
+            f"A staple from our {category.lower()} aisle."
+        )
+        image_url: str | None = f"https://cdn.granary.app/p/{_nanoid(rng, 10)}.jpg"
+        barcode: str | None = _ean13(rng)
+        tags = [rng.choice(TAGS_POOL) for _ in range(rng.randint(0, 4))]
+        tags = list(dict.fromkeys(tags))
+
+        if rng.chance(defect_rate):
+            kind = rng.randint(0, 7)
+            if kind == 0:
+                description = None
+            elif kind == 1:
+                brand = ""
+            elif kind == 2:
+                image_url = None
+            elif kind == 3:
+                barcode = None
+            elif kind == 4:
+                price_cents = -100
+            elif kind == 5:
+                inventory = 0
+            else:
+                weight_g = 999_999
+
+        created_at = base_time - timedelta(days=rng.randint(0, 365))
+        updated_at = created_at + timedelta(hours=rng.randint(0, 720))
+
+        yield Product(
+            id=f"prod_{_nanoid(rng, 14)}",
+            sku=sku,
+            name=name,
+            brand=brand,
+            category=category,
+            subcategory=subcategory,
+            description=description,
+            price_cents=price_cents,
+            currency="USD",
+            inventory=inventory,
+            barcode=barcode,
+            image_url=image_url,
+            weight_g=weight_g,
+            tags=tags,
+            enrichment_status="pending",
+            validation_status="unreviewed",
+            validation_issues=[],
+            review_status="unreviewed",
+            created_at=_iso(created_at),
+            updated_at=_iso(updated_at),
+        )
 
 
 __all__ = [

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -31,22 +32,21 @@ async def lifespan(_app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     log.info("schema ready")
 
-    log.info(
-        "checking catalog state (target=%s, defects=%.2f, seed=%s)…",
-        settings.catalog_size,
-        settings.defect_rate,
-        settings.seed,
-    )
-    async with session_factory() as session:
-        inserted = await populate_if_empty(
-            session,
-            count=settings.catalog_size,
-            seed=settings.seed,
-            defect_rate=settings.defect_rate,
-        )
-    if inserted:
-        log.info("seeded %s products", inserted)
-    log.info("backend ready")
+    async def _seed():
+        async with session_factory() as session:
+            inserted = await populate_if_empty(
+                session,
+                count=settings.catalog_size,
+                seed=settings.seed,
+                defect_rate=settings.defect_rate,
+            )
+        if inserted:
+            log.info("seeded %s products", inserted)
+        else:
+            log.info("catalog already populated, skipping seed")
+
+    asyncio.create_task(_seed())
+    log.info("backend ready (seeding in background)")
     try:
         yield
     finally:

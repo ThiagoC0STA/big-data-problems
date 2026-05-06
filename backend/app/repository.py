@@ -21,7 +21,7 @@ from .schemas import (
     ProductsResponse,
     ValidationIssue,
 )
-from .seed import CATEGORIES_TREE, generate_products
+from .seed import CATEGORIES_TREE, stream_products
 from .validation import ValidationContext, status_from_issues, validate_product
 
 log = logging.getLogger("granary.repo")
@@ -310,48 +310,36 @@ async def populate_if_empty(
         log.info("products table already has %s rows; skipping seed", existing)
         return 0
 
-    log.info("generating %s synthetic products…", count)
-    products: list[Product] = generate_products(
-        count=count, seed=seed, defect_rate=defect_rate
-    )
-
-    # Pre-compute duplicate SKUs for validation context.
-    sku_counts: dict[str, int] = {}
-    for p in products:
-        sku_counts[p.sku] = sku_counts.get(p.sku, 0) + 1
-    duplicates = {k: v for k, v in sku_counts.items() if v > 1}
+    log.info("streaming %s products in chunks of %s…", count, batch_size)
     ctx = ValidationContext(
         known_categories=set(CATEGORIES_TREE.keys()),
-        sku_counts=duplicates,
+        sku_counts={},
     )
-
-    log.info("validating %s products…", count)
-    validated: list[Product] = []
-    for p in products:
-        issues = validate_product(p, ctx)
-        validated.append(
-            p.model_copy(
-                update={
-                    "validation_issues": issues,
-                    "validation_status": status_from_issues(issues),
-                }
-            )
-        )
-
-    log.info("bulk-inserting in batches of %s…", batch_size)
-    rows: list[dict] = []
     now = _now()
-    for p in validated:
-        ca = _parse_iso(p.created_at) or now
-        ua = _parse_iso(p.updated_at) or now
-        rows.append(pydantic_to_row(p, created_at=ca, updated_at=ua))
-
     inserted = 0
-    for i in range(0, len(rows), batch_size):
-        batch = rows[i : i + batch_size]
-        await session.execute(pg_insert(ProductModel).values(batch))
-        inserted += len(batch)
-        log.info("inserted %s/%s", inserted, len(rows))
+    chunk: list[dict] = []
+
+    for p in stream_products(count=count, seed=seed, defect_rate=defect_rate):
+        issues = validate_product(p, ctx)
+        validated = p.model_copy(
+            update={
+                "validation_issues": issues,
+                "validation_status": status_from_issues(issues),
+            }
+        )
+        ca = _parse_iso(validated.created_at) or now
+        ua = _parse_iso(validated.updated_at) or now
+        chunk.append(pydantic_to_row(validated, created_at=ca, updated_at=ua))
+
+        if len(chunk) >= batch_size:
+            await session.execute(pg_insert(ProductModel).values(chunk))
+            inserted += len(chunk)
+            log.info("inserted %s/%s", inserted, count)
+            chunk = []
+
+    if chunk:
+        await session.execute(pg_insert(ProductModel).values(chunk))
+        inserted += len(chunk)
 
     await session.commit()
     log.info("seed complete: %s rows", inserted)
