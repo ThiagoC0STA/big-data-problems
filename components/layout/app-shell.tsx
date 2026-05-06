@@ -18,7 +18,6 @@ import { NetworkOffline } from "@/components/fallbacks";
 import { PerformanceHud } from "@/components/performance-hud";
 import { useOnlineStatus } from "@/components/resilience";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -159,11 +158,9 @@ function Topbar({
     <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
       {/* Mobile hamburger */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
+        <SheetTrigger className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
         </SheetTrigger>
         <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground">
           <BrandMark />
