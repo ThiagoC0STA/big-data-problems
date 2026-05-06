@@ -9,7 +9,6 @@ import {
   err,
 } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 function sse(event: string, data: unknown): string {

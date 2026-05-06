@@ -3,7 +3,6 @@ import { streamProducts, CATEGORIES } from "@/lib/server/seed-data";
 import { validateProduct, statusFromIssues } from "@/lib/server/validation";
 import { rowToProduct, productToRow, err } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const RESET_SIZE = 5000;

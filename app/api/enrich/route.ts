@@ -1,8 +1,6 @@
 import { db } from "@/lib/server/db";
 import { err, nowIso } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(req: Request) {
   const body: { productIds: string[]; fields?: string[] } = await req.json();
   if (!body.productIds?.length) return err(400, "bad_request", "productIds required.");

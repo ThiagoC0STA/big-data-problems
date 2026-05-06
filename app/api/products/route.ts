@@ -1,8 +1,6 @@
 import { db } from "@/lib/server/db";
 import { rowToProduct } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
-
 const SORT_COL: Record<string, string> = {
   name: "name", brand: "brand", category: "category",
   priceCents: "price_cents", inventory: "inventory",

@@ -1,7 +1,5 @@
 import { db } from "@/lib/server/db";
 
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const { data } = await db
     .from("products")

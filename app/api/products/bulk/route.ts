@@ -4,8 +4,6 @@ import { rowToProduct, productToRow, err, nowIso } from "@/lib/server/utils";
 import { CATEGORIES } from "@/lib/server/seed-data";
 import type { ProductPatch } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(req: Request) {
   const body: { ids: string[]; patch: ProductPatch } = await req.json();
   if (!body.ids?.length) return err(400, "bad_request", "ids required.");

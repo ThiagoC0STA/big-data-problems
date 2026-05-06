@@ -1,8 +1,6 @@
 import { db } from "@/lib/server/db";
 import { err } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
-
 function jobToResponse(row: Record<string, unknown>) {
   return {
     id: row.id,

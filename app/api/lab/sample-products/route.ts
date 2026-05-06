@@ -1,8 +1,6 @@
 import { db } from "@/lib/server/db";
 import { rowToProduct } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const count = Math.min(500, Math.max(1, Number(searchParams.get("count") ?? 50)));

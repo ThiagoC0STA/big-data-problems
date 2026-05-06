@@ -1,8 +1,6 @@
 import { db } from "@/lib/server/db";
 import { rowToProduct, err, nowIso } from "@/lib/server/utils";
 
-export const dynamic = "force-dynamic";
-
 const CORRUPT_ISSUE = {
   code: "corrupt_record",
   severity: "error",
