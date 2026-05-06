@@ -35,7 +35,7 @@ export function isRetryableStatus(status: number): boolean {
 export function apiUrl(path: string): string {
   const base =
     (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_URL : undefined) ||
-    "http://localhost:8000";
+    "/api";
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return base.replace(/\/+$/, "") + normalized;
 }
