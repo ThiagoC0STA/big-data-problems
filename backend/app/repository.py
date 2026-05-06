@@ -298,7 +298,7 @@ async def populate_if_empty(
     count: int,
     seed: int,
     defect_rate: float,
-    batch_size: int = 5000,
+    batch_size: int = 1000,
 ) -> int:
     """Seed the products table if it is empty. Returns rows inserted."""
     existing = int(
