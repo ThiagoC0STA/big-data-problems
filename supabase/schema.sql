@@ -53,7 +53,7 @@ returns jsonb language plpgsql as $$
 declare result jsonb;
 begin
   with
-    totals as (
+    base as (
       select
         count(*) as total,
         count(*) filter (where validation_status = 'ok') as vs_ok,
@@ -66,52 +66,48 @@ begin
         count(*) filter (where review_status = 'needs_changes') as rs_nc,
         count(*) filter (where inventory >= 5) as inv_healthy,
         count(*) filter (where inventory > 0 and inventory < 5) as inv_low,
-        count(*) filter (where inventory = 0) as inv_out
+        count(*) filter (where inventory = 0) as inv_out,
+        count(*) filter (where price_cents > 0 and price_cents < 500) as p_u5,
+        count(*) filter (where price_cents >= 500 and price_cents < 1000) as p_5_10,
+        count(*) filter (where price_cents >= 1000 and price_cents < 2000) as p_10_20,
+        count(*) filter (where price_cents >= 2000 and price_cents < 5000) as p_20_50,
+        count(*) filter (where price_cents >= 5000) as p_50p
       from products
     ),
     cats as (
-      select coalesce(jsonb_agg(jsonb_build_object('category', category, 'count', cnt) order by cnt desc), '[]') as v
+      select coalesce(jsonb_agg(jsonb_build_object('category', category, 'count', cnt) order by cnt desc), '[]'::jsonb) as v
       from (select category, count(*) as cnt from products group by category) x
     ),
     brands as (
-      select coalesce(jsonb_agg(jsonb_build_object('brand', brand, 'count', cnt) order by cnt desc), '[]') as v
-      from (select brand, count(*) as cnt from products where brand != '' group by brand order by cnt desc limit 10) x
+      select coalesce(jsonb_agg(jsonb_build_object('brand', brand, 'count', cnt) order by cnt desc), '[]'::jsonb) as v
+      from (select brand, count(*) as cnt from products where brand <> '' group by brand order by cnt desc limit 10) x
     ),
     issues as (
-      select coalesce(jsonb_agg(jsonb_build_object('code', code, 'count', n) order by n desc), '[]') as v
+      select coalesce(jsonb_agg(jsonb_build_object('code', code, 'count', n) order by n desc), '[]'::jsonb) as v
       from (
         select issue->>'code' as code, count(*) as n
         from products, jsonb_array_elements(validation_issues) as issue
+        where validation_issues <> '[]'::jsonb
         group by code
-      ) x
-    ),
-    pbuckets as (
-      select jsonb_agg(jsonb_build_object('bucket', bucket, 'count', cnt, 'min', mn, 'max', mx)) as v
-      from (
-        select b.bucket, count(p.id) as cnt, coalesce(min(p.price_cents), 0) as mn, coalesce(max(p.price_cents), 0) as mx
-        from (values
-          ('Under $5', 0, 500),
-          ('$5-$10', 500, 1000),
-          ('$10-$20', 1000, 2000),
-          ('$20-$50', 2000, 5000),
-          ('$50+', 5000, 1000000000)
-        ) as b(bucket, lo, hi)
-        left join products p on p.price_cents > 0 and p.price_cents >= b.lo and p.price_cents < b.hi
-        group by b.bucket, b.lo
-        order by b.lo
       ) x
     )
   select jsonb_build_object(
-    'total', t.total,
+    'total', b.total,
     'byCategory', c.v,
-    'byValidation', jsonb_build_object('ok', t.vs_ok, 'warning', t.vs_warn, 'error', t.vs_err, 'unreviewed', t.vs_unrev),
-    'byReview', jsonb_build_object('unreviewed', t.rs_unrev, 'approved', t.rs_app, 'rejected', t.rs_rej, 'needs_changes', t.rs_nc),
-    'priceBuckets', pb.v,
-    'topBrands', b.v,
+    'byValidation', jsonb_build_object('ok', b.vs_ok, 'warning', b.vs_warn, 'error', b.vs_err, 'unreviewed', b.vs_unrev),
+    'byReview', jsonb_build_object('unreviewed', b.rs_unrev, 'approved', b.rs_app, 'rejected', b.rs_rej, 'needs_changes', b.rs_nc),
+    'priceBuckets', jsonb_build_array(
+      jsonb_build_object('bucket', 'Under $5', 'count', b.p_u5),
+      jsonb_build_object('bucket', '$5-$10', 'count', b.p_5_10),
+      jsonb_build_object('bucket', '$10-$20', 'count', b.p_10_20),
+      jsonb_build_object('bucket', '$20-$50', 'count', b.p_20_50),
+      jsonb_build_object('bucket', '$50+', 'count', b.p_50p)
+    ),
+    'topBrands', br.v,
     'validationIssueBreakdown', i.v,
-    'inventoryHealth', jsonb_build_object('healthy', t.inv_healthy, 'low', t.inv_low, 'out', t.inv_out)
+    'inventoryHealth', jsonb_build_object('healthy', b.inv_healthy, 'low', b.inv_low, 'out', b.inv_out)
   ) into result
-  from totals t, cats c, brands b, issues i, pbuckets pb;
+  from base b, cats c, brands br, issues i;
 
   return result;
 end;

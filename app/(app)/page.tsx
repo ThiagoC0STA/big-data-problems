@@ -153,11 +153,11 @@ function Hero({ total }: { total?: number }) {
         Validate, enrich, and edit massive product catalogs at speed.
       </h1>
       <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-        Granary is a full-stack workspace for high-volume product data. The Python backend
-        seeds and serves a deterministic catalog of{" "}
-        <strong>{total ? formatNumber(total) : "—"} products</strong>, runs a 12-rule
-        validation engine, drives AI enrichment over Anthropic Claude, and streams progress
-        over SSE. The Next.js frontend renders all of it without a stutter, and keeps
+        Granary is a full-stack workspace for high-volume product data. Next.js API routes
+        seed and serve a deterministic catalog of{" "}
+        <strong>{total ? formatNumber(total) : "—"} products</strong> from Supabase Postgres,
+        run a 12-rule validation engine, drive AI enrichment through Anthropic Claude, and
+        stream progress over SSE. The frontend renders all of it without a stutter, and keeps
         running even when individual widgets fail.
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -168,12 +168,12 @@ function Hero({ total }: { total?: number }) {
           Try the resilience lab
         </Link>
         <Link
-          href="http://localhost:8000/docs"
+          href="https://github.com/ThiagoC0STA/big-data-problems"
           target="_blank"
           rel="noreferrer"
           className={buttonVariants({ variant: "ghost" })}
         >
-          Open API docs
+          View source on GitHub
         </Link>
       </div>
     </section>
@@ -339,7 +339,7 @@ function ChartsGrid({ stats }: { stats: CatalogStats }) {
       <SectionHeader
         eyebrow="catalog telemetry"
         title="Live signals from the full catalog"
-        body="Every chart below is computed by the Python backend over the in-memory catalog and rendered with Recharts. Each one is wrapped in its own error boundary so that one bad chart does not blank the page."
+        body="Every chart below is computed in Postgres via a single optimized RPC and rendered with Recharts. Each one is wrapped in its own error boundary so that one bad chart does not blank the page."
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -836,7 +836,7 @@ function ProblemsSolved() {
     {
       icon: <Sparkles className="h-4 w-4" />,
       title: "AI enrichment that ships",
-      body: "FastAPI worker calls Claude with prompt caching, fills description/tags/category, retries on transient failures, and falls back to deterministic offline output when the key is absent.",
+      body: "Next.js API route calls Claude with prompt caching, fills description/tags/category, retries on transient failures, and falls back to deterministic offline output when the key is absent.",
       hint: "Claude API",
     },
     {
@@ -916,8 +916,8 @@ function ApiSection() {
     <section className="flex flex-col gap-4">
       <SectionHeader
         eyebrow="the api"
-        title="A FastAPI surface, end-to-end typed"
-        body="Pydantic v2 enforces every shape on the wire (camelCase via alias_generator). The frontend mirrors it with TypeScript types and runs every payload through defensive Zod parsing, so a corrupted row becomes a placeholder instead of a crash."
+        title="A Next.js API surface, end-to-end typed"
+        body="Every endpoint is a Route Handler colocated under /app/api. Shared TypeScript types describe every payload, and the frontend runs each response through defensive Zod parsing, so a corrupted row becomes a placeholder instead of a crash."
       />
       <Card className="overflow-hidden p-0">
         <ul className="divide-y divide-border/40">
@@ -951,16 +951,16 @@ function ApiSection() {
         </ul>
       </Card>
       <p className="text-xs text-muted-foreground">
-        Full interactive spec at{" "}
+        Source for every route at{" "}
         <a
-          href="http://localhost:8000/docs"
+          href="https://github.com/ThiagoC0STA/big-data-problems/tree/main/app/api"
           target="_blank"
           rel="noreferrer"
           className="text-primary underline-offset-4 hover:underline"
         >
-          /docs
+          /app/api
         </a>{" "}
-        (Swagger UI from FastAPI).
+        on GitHub.
       </p>
     </section>
   );
@@ -992,12 +992,12 @@ function StackSection() {
       title: "Backend",
       icon: <Server className="h-4 w-4" />,
       items: [
-        { name: "Python 3.11+", role: "runtime" },
-        { name: "FastAPI", role: "REST + SSE" },
-        { name: "Pydantic 2", role: "schemas, alias_generator camelCase" },
-        { name: "uvicorn", role: "ASGI server" },
-        { name: "sse-starlette", role: "Server-Sent Events helpers" },
+        { name: "Next.js Route Handlers", role: "REST + SSE under /app/api" },
+        { name: "Supabase Postgres", role: "managed DB + RPC for stats" },
+        { name: "@supabase/supabase-js", role: "service role client" },
+        { name: "Zod", role: "request payload validation" },
         { name: "Anthropic SDK", role: "Claude API + prompt cache" },
+        { name: "Vercel", role: "edge + serverless deploy" },
       ],
     },
     {

@@ -34,19 +34,28 @@ async function main() {
     .from("products")
     .select("*", { count: "exact", head: true });
 
-  if ((existing ?? 0) > 0) {
-    console.log(`products table already has ${existing} rows — skipping seed.`);
+  const skip = existing ?? 0;
+
+  if (skip >= COUNT) {
+    console.log(`products table already has ${skip} rows (target ${COUNT}) — nothing to do.`);
     return;
   }
 
-  console.log(`Seeding ${COUNT} products in batches of ${BATCH}…`);
+  if (skip > 0) {
+    console.log(`Resuming: ${skip} rows exist, inserting ${COUNT - skip} more to reach ${COUNT}…`);
+  } else {
+    console.log(`Seeding ${COUNT} products in batches of ${BATCH}…`);
+  }
+
   const ctx = { knownCategories: new Set(CATEGORIES), skuCounts: {} };
 
   let chunk: Record<string, unknown>[] = [];
   let inserted = 0;
   const t0 = Date.now();
 
+  let i = 0;
   for (const raw of streamProducts({ count: COUNT, seed: SEED, defectRate: DEFECT_RATE })) {
+    if (i++ < skip) continue;
     const product = rowToProduct(raw as unknown as Record<string, unknown>);
     const issues = validateProduct(product, ctx);
     chunk.push(
