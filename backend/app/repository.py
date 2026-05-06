@@ -333,15 +333,15 @@ async def populate_if_empty(
 
         if len(chunk) >= batch_size:
             await session.execute(pg_insert(ProductModel).values(chunk))
+            await session.commit()
             inserted += len(chunk)
             log.info("inserted %s/%s", inserted, count)
             chunk = []
 
     if chunk:
         await session.execute(pg_insert(ProductModel).values(chunk))
+        await session.commit()
         inserted += len(chunk)
-
-    await session.commit()
     log.info("seed complete: %s rows", inserted)
     return inserted
 
