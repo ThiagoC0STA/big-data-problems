@@ -78,30 +78,6 @@ export async function getCategories(opts?: { signal?: AbortSignal }): Promise<st
   return apiFetch<string[]>(`/products/meta/categories`, opts);
 }
 
-export function exportProductsUrl(
-  filter?: ProductFilter,
-  sort?: ProductSort,
-  limit = 0,
-): string {
-  const qs = new URLSearchParams();
-  if (filter?.search) qs.set("search", filter.search);
-  if (filter?.category) qs.set("category", filter.category);
-  if (filter?.brand) qs.set("brand", filter.brand);
-  if (filter?.validationStatus) qs.set("validationStatus", filter.validationStatus);
-  if (filter?.enrichmentStatus) qs.set("enrichmentStatus", filter.enrichmentStatus);
-  if (filter?.reviewStatus) qs.set("reviewStatus", filter.reviewStatus);
-  if (filter?.priceMin !== undefined && filter.priceMin !== null) {
-    qs.set("priceMin", String(filter.priceMin));
-  }
-  if (filter?.priceMax !== undefined && filter.priceMax !== null) {
-    qs.set("priceMax", String(filter.priceMax));
-  }
-  if (sort?.field) qs.set("sortField", sort.field);
-  if (sort?.direction) qs.set("sortDirection", sort.direction);
-  if (limit > 0) qs.set("limit", String(limit));
-  return apiUrl(`/products/-/export?${qs}`);
-}
-
 export async function getBrands(opts?: { signal?: AbortSignal }): Promise<string[]> {
   return apiFetch<string[]>(`/products/meta/brands`, opts);
 }

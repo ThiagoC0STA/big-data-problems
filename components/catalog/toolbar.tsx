@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, List, MoveVertical, Search, X } from "lucide-react";
+import { List, MoveVertical, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { TableMode } from "@/components/catalog/products-table";
@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBrandsQuery, useCategoriesQuery } from "@/hooks/use-products";
-import { exportProductsUrl } from "@/lib/api-client";
 import type { ProductFilter, ProductSort, ValidationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -215,15 +214,6 @@ export function CatalogToolbar({
               Pages
             </button>
           </div>
-          <a
-            href={exportProductsUrl(filter, sort)}
-            download="granary-catalog.csv"
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-border/60 bg-background px-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Export filtered catalog as CSV"
-          >
-            <Download className="h-3 w-3" />
-            Export CSV
-          </a>
         </div>
       </div>
 
