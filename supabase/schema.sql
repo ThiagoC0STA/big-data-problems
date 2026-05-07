@@ -31,6 +31,8 @@ create index if not exists ix_products_enrichment_status on products(enrichment_
 create index if not exists ix_products_review_status on products(review_status);
 create index if not exists ix_products_price_cents on products(price_cents);
 create index if not exists ix_products_updated_at on products(updated_at);
+create index if not exists ix_products_name on products(name);
+create index if not exists ix_products_inventory on products(inventory);
 
 create table if not exists enrichment_jobs (
   id text primary key,
