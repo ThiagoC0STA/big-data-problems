@@ -1,7 +1,13 @@
 import { db } from "@/lib/server/db";
 
+export const maxDuration = 30;
+
 export async function GET() {
-  const { data } = await db.from("products").select("category").order("category");
-  const unique = [...new Set((data ?? []).map((r) => r.category as string))];
-  return Response.json(unique);
+  const { data, error } = await db.rpc("list_distinct_categories");
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data ?? [], {
+    headers: {
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+    },
+  });
 }

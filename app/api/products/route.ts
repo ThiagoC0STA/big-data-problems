@@ -8,6 +8,8 @@ const SORT_COL: Record<string, string> = {
   createdAt: "created_at", updatedAt: "updated_at",
 };
 
+export const maxDuration = 60;
+
 export async function GET(req: Request) {
   const { searchParams: p } = new URL(req.url);
   const search = p.get("search") ?? "";
@@ -46,8 +48,8 @@ export async function GET(req: Request) {
   const t0 = Date.now();
 
   const [totalRes, filteredRes, rowsRes] = await Promise.all([
-    db.from("products").select("*", { count: "exact", head: true }),
-    applyFilters(db.from("products").select("*", { count: "exact", head: true })),
+    db.from("products").select("*", { count: "estimated", head: true }),
+    applyFilters(db.from("products").select("*", { count: "estimated", head: true })),
     applyFilters(db.from("products").select("*"))
       .order(sortCol, { ascending: asc })
       .order("id", { ascending: true })
