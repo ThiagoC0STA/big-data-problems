@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     return q;
   }
 
-  const t0 = Date.now();
+  const t0 = performance.now();
 
   const [totalRes, filteredRes, rowsRes] = await Promise.all([
     db.from("products").select("*", { count: "estimated", head: true }),
@@ -56,14 +56,23 @@ export async function GET(req: Request) {
       .range(offset, offset + pageSize - 1),
   ]);
 
+  const dbMs = performance.now() - t0;
   const rows = (rowsRes.data ?? []).map(rowToProduct);
+  const totalMs = performance.now() - t0;
 
-  return Response.json({
-    rows,
-    total: totalRes.count ?? 0,
-    filteredTotal: filteredRes.count ?? 0,
-    page,
-    pageSize,
-    durationMs: Math.round((Date.now() - t0) * 10) / 10,
-  });
+  return Response.json(
+    {
+      rows,
+      total: totalRes.count ?? 0,
+      filteredTotal: filteredRes.count ?? 0,
+      page,
+      pageSize,
+      durationMs: Math.round(totalMs * 10) / 10,
+    },
+    {
+      headers: {
+        "Server-Timing": `db;dur=${dbMs.toFixed(1)}, total;dur=${totalMs.toFixed(1)}`,
+      },
+    },
+  );
 }

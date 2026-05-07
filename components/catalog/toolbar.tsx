@@ -1,6 +1,6 @@
 "use client";
 
-import { List, MoveVertical, Search, X } from "lucide-react";
+import { List, Loader2, MoveVertical, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { TableMode } from "@/components/catalog/products-table";
@@ -22,6 +22,7 @@ interface ToolbarProps {
   filter: ProductFilter;
   sort: ProductSort;
   mode: TableMode;
+  isSearching?: boolean;
   onFilter: (next: ProductFilter) => void;
   onSort: (next: ProductSort) => void;
   onModeChange: (mode: TableMode) => void;
@@ -49,6 +50,7 @@ export function CatalogToolbar({
   filter,
   sort,
   mode,
+  isSearching,
   onFilter,
   onSort,
   onModeChange,
@@ -61,10 +63,13 @@ export function CatalogToolbar({
       if (next !== (filter.search ?? "")) {
         onFilter({ ...filter, search: next || undefined });
       }
-    }, 250);
+    }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
+
+  const debouncePending = searchInput.trim() !== (filter.search ?? "");
+  const showSpinner = isSearching || debouncePending;
 
   const cats = useCategoriesQuery();
   const brands = useBrandsQuery();
@@ -87,7 +92,12 @@ export function CatalogToolbar({
             className="pl-8"
             aria-label="Search products"
           />
-          {searchInput ? (
+          {showSpinner ? (
+            <Loader2
+              aria-label="Searching"
+              className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground"
+            />
+          ) : searchInput ? (
             <button
               type="button"
               aria-label="Clear search"

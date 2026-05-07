@@ -37,7 +37,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetStale } from "@/components/fallbacks";
+import { WidgetEmpty, WidgetError, WidgetSkeleton } from "@/components/fallbacks";
 import { WidgetBoundary } from "@/components/resilience";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -111,7 +111,6 @@ function pct(part: number, total: number): number {
 export default function HomePage() {
   const query = useStatsQuery();
   const stats = query.data;
-  const stale = query.isFetching && query.isPlaceholderData;
 
   return (
     <div className="flex flex-col gap-10 p-6 md:p-10">
@@ -129,7 +128,6 @@ export default function HomePage() {
         <WidgetEmpty title="No stats yet" />
       ) : (
         <>
-          {stale ? <WidgetStale message="Refreshing stats…" /> : null}
           <StatsRow stats={stats} />
           <ChartsGrid stats={stats} />
           <ProblemsSolved />

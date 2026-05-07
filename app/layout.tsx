@@ -18,12 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://granary-one.vercel.app"),
   title: {
     default: "Granary — Validate, enrich, and edit massive product catalogs",
     template: "%s · Granary",
   },
   description:
-    "Granary is a data infrastructure workspace for e-commerce. Virtualized tables, AI enrichment, validation queues — built to handle hundreds of thousands of rows without breaking a sweat.",
+    "A full-stack workspace for high-volume product data. 500,000-row virtualized catalog, AI enrichment over Claude, validation queues, real-time SSE — built end-to-end in Next.js + Supabase.",
   applicationName: "Granary",
   authors: [{ name: "Thiago Costa" }],
   keywords: [
@@ -34,7 +35,28 @@ export const metadata: Metadata = {
     "virtualized table",
     "Next.js",
     "TypeScript",
+    "Supabase",
+    "Claude",
   ],
+  openGraph: {
+    type: "website",
+    siteName: "Granary",
+    title: "Granary — Validate, enrich, and edit massive product catalogs at speed",
+    description:
+      "500,000-row virtualized catalog, AI enrichment over Claude, validation queues, real-time SSE. Built end-to-end in Next.js + Supabase.",
+    url: "/",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Granary — Validate, enrich, and edit massive product catalogs at speed",
+    description:
+      "500,000-row virtualized catalog, AI enrichment, validation queues, real-time SSE. Next.js + Supabase, end-to-end.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {
