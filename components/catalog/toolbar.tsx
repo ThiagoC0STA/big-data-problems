@@ -1,7 +1,8 @@
 "use client";
 
+import { useIsFetching } from "@tanstack/react-query";
 import { List, Loader2, MoveVertical, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 
 import type { TableMode } from "@/components/catalog/products-table";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,6 @@ interface ToolbarProps {
   filter: ProductFilter;
   sort: ProductSort;
   mode: TableMode;
-  isSearching?: boolean;
   onFilter: (next: ProductFilter) => void;
   onSort: (next: ProductSort) => void;
   onModeChange: (mode: TableMode) => void;
@@ -50,26 +50,28 @@ export function CatalogToolbar({
   filter,
   sort,
   mode,
-  isSearching,
   onFilter,
   onSort,
   onModeChange,
 }: ToolbarProps) {
   const [searchInput, setSearchInput] = useState(filter.search ?? "");
+  const isFetchingProducts = useIsFetching({ queryKey: ["products"] }) > 0;
+  const committedSearch = filter.search ?? "";
+  const trimmedInput = searchInput.trim();
+  const inputChanged = trimmedInput !== committedSearch;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const next = searchInput.trim();
-      if (next !== (filter.search ?? "")) {
-        onFilter({ ...filter, search: next || undefined });
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
+  const submitSearch = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!inputChanged) return;
+    onFilter({ ...filter, search: trimmedInput || undefined });
+  };
 
-  const debouncePending = searchInput.trim() !== (filter.search ?? "");
-  const showSpinner = isSearching || debouncePending;
+  const clearSearch = () => {
+    setSearchInput("");
+    if (committedSearch) {
+      onFilter({ ...filter, search: undefined });
+    }
+  };
 
   const cats = useCategoriesQuery();
   const brands = useBrandsQuery();
@@ -83,31 +85,51 @@ export function CatalogToolbar({
   return (
     <div className="flex flex-col gap-3 border-b border-border/60 bg-background/95 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[260px] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search products, SKU, brand…"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-8"
-            aria-label="Search products"
-          />
-          {showSpinner ? (
-            <Loader2
-              aria-label="Searching"
-              className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground"
+        <form
+          onSubmit={submitSearch}
+          className="flex min-w-[260px] flex-1 items-center gap-2"
+        >
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search products, SKU, brand… (press Enter)"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-8 pr-8"
+              aria-label="Search products"
             />
-          ) : searchInput ? (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => setSearchInput("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-        </div>
+            {searchInput && !isFetchingProducts ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!inputChanged || isFetchingProducts}
+            className="gap-1.5"
+            aria-label="Run search"
+          >
+            {isFetchingProducts ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Searching
+              </>
+            ) : (
+              <>
+                <Search className="h-3.5 w-3.5" />
+                Search
+              </>
+            )}
+          </Button>
+        </form>
 
         <Select
           value={filter.category ?? "any"}
