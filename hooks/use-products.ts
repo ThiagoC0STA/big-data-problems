@@ -88,7 +88,9 @@ export function useStatsQuery() {
   return useQuery({
     queryKey: ["stats"],
     queryFn: ({ signal }) => getStats({ signal }),
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    gcTime: 60 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 
