@@ -120,3 +120,27 @@ create or replace function truncate_products()
 returns void language sql as $$
   truncate products;
 $$;
+
+-- Singleton cache so /api/stats reads in microseconds instead of recomputing
+-- aggregates over 500k rows on every cold hit.
+create table if not exists stats_cache (
+  id int primary key default 1,
+  data jsonb not null,
+  refreshed_at timestamptz not null default now(),
+  constraint stats_cache_singleton check (id = 1)
+);
+
+create or replace function refresh_stats_cache()
+returns void language plpgsql as $$
+begin
+  insert into stats_cache (id, data, refreshed_at)
+  values (1, get_catalog_stats(), now())
+  on conflict (id) do update
+    set data = excluded.data, refreshed_at = excluded.refreshed_at;
+end;
+$$;
+
+create or replace function get_cached_stats()
+returns jsonb language sql stable as $$
+  select data from stats_cache where id = 1;
+$$;
