@@ -30,9 +30,9 @@ export async function GET(req: Request) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function applyFilters(q: any) {
-    if (search) {
+    if (search && search.length >= 2) {
       q = q.or(
-        `name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%,category.ilike.%${search}%`,
+        `name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%`,
       );
     }
     if (category) q = q.eq("category", category);

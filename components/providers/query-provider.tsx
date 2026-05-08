@@ -15,17 +15,18 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             staleTime: 30_000,
             gcTime: 5 * 60_000,
             refetchOnWindowFocus: false,
-            // Smart retry: never retry 4xx (except a few transient ones),
-            // back off exponentially on 5xx and network errors, cap at 3.
+            // At most one retry. Compounding 3 retries × 8s backoff turned
+            // a single slow query into minutes of UI wait, which is the
+            // exact failure mode that motivated this change.
             retry: (failureCount, error) => {
-              if (failureCount >= 3) return false;
+              if (failureCount >= 1) return false;
               if (error instanceof HttpError) {
                 if (error.status === 0) return true; // network/timeout
                 return isRetryableStatus(error.status);
               }
               return true;
             },
-            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+            retryDelay: 500,
             placeholderData: (prev: unknown) => prev,
           },
           mutations: {
